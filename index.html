@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta content="IE=edge" http-equiv="X-UA-Compatible">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.css">  
+  <link href="styles.css" rel="stylesheet">
+  <title>Ninja Conf</title>
+</head>
+<body onload="onload()">
+  <script src="keys.js"></script>
+  <div class="app">
+    <button onclick="open()">Open</button>
+    <button onclick="save()">Save</button> 
+    <div class="keyboard">
+        <object data="corne_left.svg"
+            id="corne_left"
+            width="544"
+            height="385"
+            type="image/svg+xml">
+        </object> 
+        <object data="corne_right.svg"
+            id="corne_right"
+            width="544"
+            height="385"
+            type="image/svg+xml">
+        </object>
+    </div>
+  </div>
+  <script>
+    const svgNS = "http://www.w3.org/2000/svg";
+    const COLS=6
+    const ROWS=4
+    const font="Courier"
+    const font_size=20
+    let canvas=null
+    let context=null
+    let right=[]
+    function onload(){
+        canvas = displayTextWidth.canvas || (displayTextWidth.canvas = document.createElement("canvas"));
+        context = canvas.getContext("2d");
+        //draw()
+        let corne_left=document.getElementById("corne_left")
+        set_keys_text(corne_left)
+        let corne_right=document.getElementById("corne_right")
+        set_keys_text(corne_right)
+    }
+    function set_keys_text(svg){
+        const doc=svg.contentDocument
+        let layer=doc.getElementById("layer2")
+        let g=doc.getElementById("svg9")
+        for(let i=0;i<ROWS;i++){
+            for(let j=0;j<COLS;j++){
+                let key=doc.getElementById(`r${i}c${j}`)
+                if(key!=null){
+                    let newText = document.createElementNS(svgNS,"text");
+                    const bb=key.getBoundingClientRect()
+                    //console.log("bb ",bb)
+                    const t='Ctrl'
+                    const l=displayTextWidth(t,font,font_size)/2
+                    console.log("l ",l)
+                    newText.setAttributeNS(null,"x",bb.x+(bb.right-bb.x)/2-l);
+                    newText.setAttributeNS(null,"y",bb.y+(bb.bottom-bb.y)/2+10);
+                    newText.setAttributeNS(null,"text-align","center");
+                    newText.setAttributeNS(null,"font-family",font);
+                    newText.setAttributeNS(null,"font-size",font_size);
+                    //newText.innerHTML=`r${i}c${j}`
+                    newText.innerHTML=t
+                    g.appendChild(newText)
+                }
+            }
+        }
+    }
+    function save(){
+        let fileContent = "Ninja conf file";
+        let bb = new Blob([fileContent ], { type: 'text/plain' });
+        let a = document.createElement('a');
+        a.download = 'ninja_corne.json';
+        a.href = window.URL.createObjectURL(bb);
+        a.click();
+    }
+    function displayTextWidth(text, font,size) {
+        if(context!=null){
+            context.font =size+"px "+ font;
+            const metrics = context.measureText(text);
+            return metrics.width;
+        }else{
+            return 0;
+        }
+    }
+  </script>
+</body>
+</html>

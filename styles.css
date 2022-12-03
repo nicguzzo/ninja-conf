@@ -1,0 +1,13 @@
+body{
+    max-width: 90%;
+}
+
+.app{
+    display: flex;
+    flex-direction: column;    
+}
+.keyboard{
+    display: flex;
+    justify-content: space-evenly;
+    width: 100%;
+}
