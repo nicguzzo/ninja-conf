@@ -8,87 +8,514 @@
   <link href="styles.css" rel="stylesheet">
   <title>Ninja Conf</title>
 </head>
-<body onload="onload()">
+<body id="body">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="keys.js"></script>
-  <div class="app">
-    <button onclick="open()">Open</button>
-    <button onclick="save()">Save</button> 
-    <div class="keyboard">
-        <object data="corne_left.svg"
-            id="corne_left"
-            width="544"
-            height="385"
+  <div id="app" class="app">
+    <h1 class="hide" id="webhid">This Browser doesn't support WebHid</h1>
+    <button @click="open_kb()">Open</button>
+    <button @click="close_kb()">Close</button>
+    <button @click="read_keys()">Get Conf</button>
+    <button @click="write_keys()">Send Conf</button>
+    <button @click="reset_keys()">Reset Conf</button>
+    <button @click="save()">Save</button> 
+    <div class="keyboards">
+        <object data="corne_left.svg" class="kb_side"
+            id="left_side"
             type="image/svg+xml">
         </object> 
-        <object data="corne_right.svg"
-            id="corne_right"
-            width="544"
-            height="385"
+        <object data="corne_right.svg" class="kb_side"
+            id="right_side"
             type="image/svg+xml">
         </object>
     </div>
+    <div class="flex justifyCenter">
+        <select v-model="layer" @change="change_layer">
+            <option  v-for="ly in layers" :value="ly.id" >{{ly.name}}</option>
+        </select>
+    </div>
+    <textarea id="test_area"></textarea>
+    <div class="keyDialog" id="key_dialog">        
+        <div class="flex column" >
+            <b class="flex key justifyCenter" >{{current.symbol}}</b>
+            <select class="flex justifyCenter" v-model="selected_symbol">
+                <option></option>
+                <option  v-for="letter in letters" :value="letter.code" >{{letter.symbol}}</option>
+            </select>
+            <button @click="set_key()">Set</button>
+            <button @click="dialog_hide()">Cancel</button>
+        </div>
+        
+        <!-- <ul>
+          <li>side: {{current.side}}</li>
+          <li>key: [{{current.key.row}},{{current.key.col}}]</li>
+          <li>code: {{current.code}}</li>
+          <li>type: {{current.ktype}}</li>
+          <li>symbol: {{current.symbol}}</li>          
+        </ul> -->
+    </div>
+
   </div>
   <script>
     const svgNS = "http://www.w3.org/2000/svg";
-    const COLS=6
-    const ROWS=4
+    
     const font="Courier"
-    const font_size=20
-    let canvas=null
-    let context=null
-    let right=[]
-    function onload(){
-        canvas = displayTextWidth.canvas || (displayTextWidth.canvas = document.createElement("canvas"));
-        context = canvas.getContext("2d");
-        //draw()
-        let corne_left=document.getElementById("corne_left")
-        set_keys_text(corne_left)
-        let corne_right=document.getElementById("corne_right")
-        set_keys_text(corne_right)
-    }
-    function set_keys_text(svg){
-        const doc=svg.contentDocument
-        let layer=doc.getElementById("layer2")
-        let g=doc.getElementById("svg9")
-        for(let i=0;i<ROWS;i++){
-            for(let j=0;j<COLS;j++){
-                let key=doc.getElementById(`r${i}c${j}`)
-                if(key!=null){
-                    let newText = document.createElementNS(svgNS,"text");
-                    const bb=key.getBoundingClientRect()
-                    //console.log("bb ",bb)
-                    const t='Ctrl'
-                    const l=displayTextWidth(t,font,font_size)/2
-                    console.log("l ",l)
-                    newText.setAttributeNS(null,"x",bb.x+(bb.right-bb.x)/2-l);
-                    newText.setAttributeNS(null,"y",bb.y+(bb.bottom-bb.y)/2+10);
-                    newText.setAttributeNS(null,"text-align","center");
-                    newText.setAttributeNS(null,"font-family",font);
-                    newText.setAttributeNS(null,"font-size",font_size);
-                    //newText.innerHTML=`r${i}c${j}`
-                    newText.innerHTML=t
-                    g.appendChild(newText)
+    const font_size=18
+    const filters = [
+        {
+            vendorId: 0xcaca, // nicguzzo
+            productId: 0x0001, // ninja corne
+            usagePage: 0x1,
+            usage:0x05
+        },
+    ];
+    
+
+    const { createApp } = Vue
+
+    createApp({
+        data() {
+            return {
+                ninja_kb:null,                            
+                webhid:false,
+                canvas:null,
+                canvas_context:null,
+                //keys:[ [ [],[] ] , [ [],[] ] ],
+                keys:[],
+                layer:0,
+                layers:[],
+                last:false,
+                left_side:null,
+                right_side:null,
+                current:{
+                    ktype:null,
+                    code:null,
+                    key:{
+                        row:null,
+                        col:null
+                    },
+                    side:"",
+                    symbol:""
+                },
+                selected_symbol:"",
+                letters:[],
+                sides:[],
+                dialog:null,
+                nSIDES:0,
+                nLAYERS:0,
+                nROWS:0,
+                nCOLS:0,
+                //read_side:0,
+                //read_layer:0,
+                //total_key_reads:0,
+                //n_key_reads:0
+            }
+        },
+        methods: {
+            
+            async open_hid(){    
+                if(webhid){
+                    const devices  = await navigator.hid.getDevices()
+                    //console.log(devices)
+                    device=null
+                    if(devices!=null && devices.length>0){
+                        for(i in devices){
+                            if(devices[i].productName=="Ninja Conf"){
+                                device=devices[i]
+                                break;
+                            }
+                        }
+                    }
+                    await this.open_hid_device(device)
+                    await this.read_kb_info()
+                }
+            },
+            async open_kb(){
+                if(device==null){
+                    const [dev] = await navigator.hid.requestDevice({ filters });//this MUST be called from button or user interaction
+                    device=dev
+                }
+                await this.open_hid_device(device)
+                await this.read_kb_info()
+                
+            },
+            async close_kb(){
+                const devices  = await navigator.hid.getDevices()
+                console.log("devices ",devices)
+                for(const d in devices){
+                    console.log("dev ",devices[d])
+                    await devices[d].forget()
+                }
+                this.ninja_kb=null
+            },
+            async open_hid_device(device){        
+                if(device!=null && device.productName=="Ninja Conf"){
+                    this.ninja_kb=device
+                    await this.ninja_kb.open()            
+                    this.add_report_listener()
+                    console.log("opened")
+                }else{
+                    this.ninja_kb=null
+                }
+            },
+            
+            //gets report from keyboard
+            async add_report_listener(){
+                this.ninja_kb.addEventListener("inputreport", event => {
+                    const { data, device, reportId } = event;
+                    //console.log(`data lenght: ${data.byteLength}.`);
+                    let bytes=[]
+                    for(let i=0;i<data.byteLength;i++){
+                        //console.log(`data: ${data.getUint8(i)}`);
+                        bytes.push(data.getUint8(i))
+                    }
+                    //console.log("data ",k);
+                    if(bytes[0]==0){//kb info
+                        console.log("kbinfo ",bytes);
+                        this.nSIDES  = bytes[1]
+                        this.nLAYERS = bytes[2]
+                        this.nROWS   = bytes[3]
+                        this.nCOLS   = bytes[4]
+                        this.total_key_reads=this.nSIDES*this.nLAYERS
+                        for(let i=0;i<this.nLAYERS;i++){
+                            this.layers.push({id:i,name:`Layer ${i}`})
+                        }
+                        this.keys=[]
+                        for(let s=0;s<this.nSIDES;s++){
+                            this.keys.push([])
+                            for(let i=0;i<this.nLAYERS;i++){
+                                this.keys[s].push([])
+                            }
+                        }
+                        console.log("sides ",this.nSIDES)
+                        console.log("layers ",this.nLAYERS)
+                        console.log("rows ",this.nROWS)
+                        console.log("cols ",this.nCOLS)
+                        this.read_keys()
+                        
+                    }else if(bytes[0]==1){//keys
+                        console.log("keys ",bytes);
+                        let side_i  = bytes[2]
+                        let layer_i = bytes[3]
+                        let k=4
+                        let rows=[]
+                        for(let i=0;i<this.nROWS;i++){
+                            let col=[]
+                            for(let j=0;j<this.nCOLS;j++){
+                                const ktype=bytes[k]
+                                const code=bytes[k+1]
+                                col.push({ktype,code})
+                                k+=2
+                            }
+                            rows.push(col)
+                        }
+                        this.keys[side_i][layer_i]=rows
+                        if(side_i===this.nSIDES-1 && layer_i===this.nLAYERS-1){
+                            this.set_keys_text(this.left_side)
+                            this.set_keys_text(this.right_side)
+                            console.log("keys ",this.keys);
+                        }else{
+                            layer_i++;
+                            if(layer_i>=this.nLAYERS){
+                                side_i++;
+                                layer_i=0;
+                            }
+                            if(side_i<this.nSIDES&& layer_i<this.nLAYERS){
+                                console.log(`request ${side_i} ${layer_i}`)
+                                const data = [2,side_i,layer_i];//2 == get keys ,side, layer
+                                this.ninja_kb.sendReport(0, new Uint8Array(data));
+                            }
+                        }
+                        //this.n_key_reads+=1;
+                    }else if(bytes[0]==2){
+                        console.log("raw ",bytes);
+                    }
+                });
+            },
+            async read_kb_info(){
+                if(this.ninja_kb!=null){
+                    const data = [0];//0 == get kb info
+                    last=false
+                    await this.ninja_kb.sendReport(0, new Uint8Array(data));
+                }else{
+                    console.log("no ninja keyboard connected")
+                }
+            },
+            async read_keys(){
+                if(this.ninja_kb!=null){
+                    /*this.n_key_reads=0;
+                    for(let s=0;s<this.nSIDES;s++){                        
+                        for(let l=0;l<this.nLAYERS;l++){
+                            const data = [2,s,l];//2 == get keys ,side, layer
+                            await this.ninja_kb.sendReport(0, new Uint8Array(data));
+                            
+                            //await setTimeout(()=>{},100)
+                        }
+                    }*/
+                    console.log("request 0 0")
+                    const data = [2,0,0];//2 == get keys ,side, layer
+                    await this.ninja_kb.sendReport(0, new Uint8Array(data));
+                }else{
+                    console.log("no ninja keyboard connected")
+                }
+            },
+            async write_keys(){
+                for(let s=0;s<this.nSIDES;s++){                        
+                    for(let l=0;l<this.nLAYERS;l++){
+                        let data=this.dump_keys(s,l)
+                        await this.ninja_kb.sendReport(0, new Uint8Array(data));
+                        await setTimeout(()=>{},200)
+                    }
+                }
+                
+            },
+            dump_keys(side,layer){
+                let data = [1,0,side,layer];
+                for(let i=0;i<this.nROWS;i++){                    
+                    for(let j=0;j<this.nCOLS;j++){                        
+                        data.push(this.keys[side][layer][i][j].ktype)
+                        data.push(this.keys[side][layer][i][j].code)                        
+                    }
+                }
+                return data
+            },
+            async reset_keys(){
+                if(this.ninja_kb!=null){
+                    const data = [3];//3 == reset
+                    await this.ninja_kb.sendReport(0, new Uint8Array(data));
+                }else{
+                    console.log("no ninja keyboard connected")
+                }
+            },
+            change_layer(e){
+                this.set_keys_text(this.left_side)
+                this.set_keys_text(this.right_side)
+                //console.log(this.layer)
+            },
+            save(){
+                let fileContent = JSON.stringify(this.keys,null,2);
+                let bb = new Blob([fileContent ], { type: 'text/plain' });
+                let a = document.createElement('a');
+                a.download = 'ninja_corne.json';
+                a.href = window.URL.createObjectURL(bb);
+                a.click();
+            },
+            set_key(){
+                console.log("set key to ",this.selected_symbol)
+                //this.current.symbol=this.selected_symbol
+                const {row,col}=this.current.key;                
+                const side=(this.current.side=="left_side"?0:1)
+                
+                let key=this.keys[side][this.layer][row][col]
+                key.ktype=0
+                key.code=this.selected_symbol
+                this.current.symbol=key_codes[key.code].symbol
+
+                const svg=document.getElementById(this.current.side)
+                const doc=svg.contentDocument
+                let key_e=doc.getElementById(`r${row}c${col}`)
+                let g=doc.getElementById("svg9")
+
+                let key_t=doc.getElementById(`key_text_${side}_r${row}c${col}`)
+                if(key_t!=null){
+                    const bb=key_e.getBoundingClientRect()
+                    key_t.innerHTML=this.current.symbol
+                    const l=this.displayTextWidth(this.current.symbol,font,font_size)/2
+                    key_t.setAttributeNS(null,"x",bb.x+(bb.right-bb.x)/2-l);                    
+                }
+                console.log("key: ",key_t)
+                this.dialog_hide()
+            },
+            set_key_info(svg,side,i,j,e){
+                const key=this.keys[side][this.layer][i][j]
+                this.selected_symbol=key.code
+                this.current.side=svg.id
+                this.current.key.row=i
+                this.current.key.col=j
+                this.current.ktype=key.ktype
+                this.current.code=key.code
+                this.current.symbol=key_codes[key.code].symbol
+                const lastdp_none=this.dialog.style.display=="none"
+                this.dialog.style.display="block"
+                if(lastdp_none){
+                    setTimeout(()=>{
+                        this.move_dialog(svg,i,j)
+                    },100)
+                }else{
+                    this.move_dialog(svg,i,j)
+                }
+                //console.log(event)
+                
+            },
+            move_dialog(svg,i,j){
+                const svg_bb=svg.getBoundingClientRect()
+                const doc=svg.contentDocument
+                let key_e=doc.getElementById(`r${i}c${j}`)
+                const key_bb=key_e.getBoundingClientRect()
+                const dialog_bb=this.dialog.getBoundingClientRect()
+                const w=dialog_bb.width-key_bb.width
+                this.dialog.style.left=(svg_bb.x+key_bb.x-w/2)+"px";
+                this.dialog.style.top=key_bb.y+key_bb.height+svg_bb.y+"px";
+                this.dialog.focus()
+            },
+            //svg
+            set_keys_text(svg){
+                const doc=svg.contentDocument
+                const side=(svg.id=="left_side"?0:1)
+                let g=doc.getElementById("svg9")
+                for(let i=0;i<this.nROWS;i++){
+                    for(let j=0;j<this.nCOLS;j++){
+                        let key_rect_e=doc.getElementById(`r${i}c${j}`)
+                        if(key_rect_e!=null){
+                            //console.log("k ",keys[side][layer]);
+                            let key=this.keys[side][this.layer][i][j]
+                            
+                            let t=""
+                            if(key.ktype==0){
+                                t=key_codes[key.code].symbol
+                            }else if(key.ktype==1){
+                                t="Layer"
+                            }
+                            if(t!=null){
+                                const l=this.displayTextWidth(t,font,font_size)/2
+                                let tid=`key_text_${side}_r${i}c${j}`;
+                                let _txt_e=doc.getElementById(tid)
+                                let key_txt_e=_txt_e
+                                //console.log("k ",_txt_e);
+                                if(_txt_e==null){
+                                    key_txt_e=document.createElementNS(svgNS,"text")
+                                    key_txt_e.setAttribute("id",tid);
+                                    key_txt_e.setAttribute("cursor","pointer");
+                                    key_txt_e.setAttributeNS(null,"text-align","center");
+                                    
+                                    key_txt_e.addEventListener("click",event=>{
+                                        //console.log("event2 ",svg.id," ",event.target.id)
+                                        this.set_key_info(svg,side,i,j)
+                                    }) 
+                                    key_rect_e=key_rect_e
+                                    key_rect_e.setAttribute("cursor","pointer");
+                                    key_rect_e.addEventListener("click",event=>{
+                                        //console.log("event1 ",svg.id," ",event.target.id)
+                                        this.set_key_info(svg,side,i,j,event)
+                                    }) 
+                                    g.appendChild(key_txt_e)
+                                }
+                                const bb=key_rect_e.getBoundingClientRect()
+                                key_txt_e.setAttributeNS(null,"x",bb.x+(bb.right-bb.x)/2-l);
+                                key_txt_e.setAttributeNS(null,"y",bb.y+(bb.bottom-bb.y)/2+10);
+                                key_txt_e.setAttributeNS(null,"font-family",font);
+                                key_txt_e.setAttributeNS(null,"font-size",font_size);
+                                //console.log("t ",t);
+                                key_txt_e.innerHTML=t.replace(/</,"&lt;").replace(/>/,"&gt;")
+                            }
+                            //console.log("k ",key);
+                            
+                        }
+                    }
+                }
+            },
+            displayTextWidth(text, font,size){
+                if(this.canvas_context!=null){
+                    this.canvas_context.font =size+"px "+ font;
+                    const metrics = this.canvas_context.measureText(text);
+                    return metrics.width;
+                }else{
+                    return 0;
+                }
+            },
+            dialog_hide(){
+                if(this.dialog!=null)
+                    this.dialog.style.display="none"
+            },
+            change_key_bg(key_code,color){
+                for(let s=0;s<this.nSIDES;s++){
+                    for(let i=0;i<this.nROWS;i++){
+                        for(let j=0;j<this.nCOLS;j++){
+                            let key=this.keys[s][this.layer][i][j]                                    
+                            if(key.ktype==0){
+                                let k=key_codes[key.code].name
+                                if( k==key_code)
+                                {
+                                    //console.log(`k ${k} s${s} i${i} k${j}`)
+                                    //const svg=document.getElementById((s?"left_side":"right_side"))
+                                    const svg=this.sides[s]
+                                    const doc=svg.contentDocument
+                                    let el=doc.getElementById(`r${i}c${j}`)
+                                    //el.setAttribute("fill","#fff");
+                                    //console.log(el.style.fill)
+                                    el.style.fill=color
+                                    //let g=doc.getElementById("svg9")
+                                }
+                            }
+                        }
+                    }
                 }
             }
+        },
+        mounted() {
+            this.canvas = document.createElement("canvas");
+            this.canvas_context = this.canvas.getContext("2d");
+            this.left_side=document.getElementById("left_side")
+            this.right_side=document.getElementById("right_side")
+            this.sides=[this.left_side,this.right_side]
+            this.dialog=document.getElementById("key_dialog")
+            window.addEventListener("keydown",(e)=>{
+                if (!e.repeat){
+                    console.log("key ",e)
+                    //console.log("key ",e.keyCode)
+                    if(e.key == "Escape"){
+                        this.dialog_hide()
+                    }
+                    this.change_key_bg(e.code,"#0a0")
+                }
+            })
+            window.addEventListener("keyup",(e)=>{
+                if (!e.repeat){
+                    //console.log("key ",e)
+                    //console.log("key ",e.keyCode)
+                    if(e.key == "Escape"){
+                        this.dialog_hide()
+                    }
+                    this.change_key_bg(e.code,"rgb(180,180,180)")
+                }
+            })
+            document.addEventListener("click",(e)=>{
+                //console.log("click ",e)                
+                const bb=this.dialog.getBoundingClientRect()
+                if( !(e.x>=bb.left && e.x<=bb.right && e.y>=bb.top && e.y<=bb.bottom) )
+                    this.dialog_hide()
+            });
+            
+            /*const dialog=document.getElementById("key_dialog")
+            dialog.addEventListener("keydown",event=>{
+                console.log("keyup ",event)
+            })*/
+            this.letters.push({code:0x100,symbol:key_codes[0x100].symbol})
+            for(let i=keys_letters_numbers.from;i<keys_letters_numbers.to;i++){
+                if(key_codes[i]!=null){
+                    //const desc=(key_codes[i].name!="")?" "+key_codes[i].name:"";
+                    this.letters.push({code:i,symbol:key_codes[i].symbol,name:key_codes[i].name})
+                }
+            }
+
+            webhid=("hid" in navigator)
+            if(!webhid){
+                let wh=document.getElementById("webhid")
+                wh.className="show"
+            }
+
+            
+            //draw()
+            //console.log(key_codes)
+            //this.left_side.addEventListener("load",()=> this.set_keys_events(this.left_side))
+            //this.right_side.addEventListener("load",()=> this.set_keys_events(this.right_side))
+            this.open_hid()
         }
-    }
-    function save(){
-        let fileContent = "Ninja conf file";
-        let bb = new Blob([fileContent ], { type: 'text/plain' });
-        let a = document.createElement('a');
-        a.download = 'ninja_corne.json';
-        a.href = window.URL.createObjectURL(bb);
-        a.click();
-    }
-    function displayTextWidth(text, font,size) {
-        if(context!=null){
-            context.font =size+"px "+ font;
-            const metrics = context.measureText(text);
-            return metrics.width;
-        }else{
-            return 0;
-        }
-    }
+    }).mount('#app')
+
+
+    
+    
   </script>
 </body>
 </html>

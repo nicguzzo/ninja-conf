@@ -6,8 +6,40 @@ body{
     display: flex;
     flex-direction: column;    
 }
-.keyboard{
+.keyboards{
     display: flex;
     justify-content: space-evenly;
-    width: 100%;
+    flex-wrap: wrap;
+}
+.keyDialog{
+    display: none;
+    position:fixed;
+    width:150px;
+    height: 200px;
+    background-color: #202b38;
+    border:2px solid rgb(12,21,28);
+    border-radius: 6px;
+    z-index:100;
+    left:0;
+    top:0;
+    transition: left .5s cubic-bezier(.42,-0.3,.78,1.25),top .5s cubic-bezier(.42,-0.3,.78,1.25);
+}
+.key{
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 20pt;
+}
+.flex{
+    display: flex;    
+}
+.column{
+    flex-direction: column;
+}
+.justifyCenter{
+    justify-content: center;
+}
+.hide{
+    display: none;
+}
+.show{
+    display: block;
 }
