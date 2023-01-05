@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta content="IE=edge" http-equiv="X-UA-Compatible">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <link rel="icon" type="image/x-icon" href="img/favicon-32x32.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.css">  
   <link href="css/styles.css" rel="stylesheet">
   <title>Ninja Conf</title>
@@ -126,7 +127,7 @@
             
             async open(){
                 await this.hid.get_devices()
-                this.update()       
+                await this.update()       
             },
             close (){
                 this.hid.close()
@@ -154,10 +155,12 @@
                 console.log("sides ",this.sides)
                 for(let i=1;i<4;i++){
                     if(i!=this.model){
-                        this.sides[i][2].style.display="none";
+                        if(this.sides[i][2])
+                            this.sides[i][2].style.display="none";
                     }
                 }
-                this.sides[this.model][2].style.display="flex";
+                if(this.sides[this.model][2])
+                    this.sides[this.model][2].style.display="flex";
                 
                 this.set_keys_text(this.sides[this.model][0])
                 this.set_keys_text(this.sides[this.model][1])
@@ -368,8 +371,7 @@
                 wh.className="show"
                 
             }else{
-                this.hid.open()
-                this.update()
+                this.hid.open().then(()=>this.update())
             }
         }
     }).mount('#app')
