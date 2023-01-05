@@ -1,5 +1,6 @@
 
 const Keyboard={
+    MODEL:0,
     nSIDES:0,
     nLAYERS:0,
     nROWS:0,
@@ -14,33 +15,19 @@ const Keyboard={
         for(let i=0;i<data.byteLength;i++){
             bytes.push(data.getUint8(i))
         }
-        
-        if(bytes[0]==0){//kb info
-            this.process_kb_info(bytes)
-            this.kb_info_p.resolve();
-        }else if(bytes[0]==1){//keys
-            this.process_keys(bytes);
-            this.kb_keys_p.resolve();
-            
-            /*if(side_i===this.nSIDES-1 && layer_i===this.nLAYERS-1){
-                this.set_keys_text(this.left_side)
-                this.set_keys_text(this.right_side)
-                console.log("keys ",this.keys);
-            }else{
-                layer_i++;
-                if(layer_i>=this.nLAYERS){
-                    side_i++;
-                    layer_i=0;
-                }
-                if(side_i<this.nSIDES&& layer_i<this.nLAYERS){
-                    console.log(`request ${side_i} ${layer_i}`)
-                    const data = [2,side_i,layer_i];//2 == get keys ,side, layer
-                    this.hid.ninja_kb.sendReport(0, new Uint8Array(data));
-                }
-            }*/
-            
-        }else if(bytes[0]==2){
-            console.log("raw ",bytes);
+        const first_byte=bytes[0]
+        switch(first_byte){
+            case 0://kb info
+                this.process_kb_info(bytes)
+                this.kb_info_p.resolve();
+            break;
+            case 1://keys
+                this.process_keys(bytes);
+                this.kb_keys_p.resolve();
+            break;
+            case 2:
+                console.log("raw ",bytes);
+            break;
         }
     },
     
@@ -93,10 +80,11 @@ const Keyboard={
     },
     process_kb_info(bytes){
         console.log("kbinfo ",bytes);
-        this.nSIDES  = bytes[1]
-        this.nLAYERS = bytes[2]
-        this.nROWS   = bytes[3]
-        this.nCOLS   = bytes[4]
+        this.MODEL   = bytes[1]
+        this.nSIDES  = bytes[2]
+        this.nLAYERS = bytes[3]
+        this.nROWS   = bytes[4]
+        this.nCOLS   = bytes[5]
         
         for(let i=0;i<this.nLAYERS;i++){
             this.layers.push({id:i,name:`Layer ${i}`})
@@ -108,6 +96,7 @@ const Keyboard={
                 this.keys[s].push([])
             }
         }
+        console.log("model ",this.MODEL)
         console.log("sides ",this.nSIDES)
         console.log("layers ",this.nLAYERS)
         console.log("rows ",this.nROWS)

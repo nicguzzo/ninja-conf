@@ -5,15 +5,15 @@
   <meta content="IE=edge" http-equiv="X-UA-Compatible">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.css">  
-  <link href="styles.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
   <title>Ninja Conf</title>
 </head>
 <body id="body">
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <script src="utils.js"></script>
-  <script src="keys.js"></script>
-  <script src="hid.js"></script>
-  <script src="keyboard.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/keys.js"></script>
+  <script src="js/hid.js"></script>
+  <script src="js/keyboard.js"></script>
 
   <div id="app" class="app">
     <h1 class="hide" id="webhid">This Browser doesn't support WebHid</h1>
@@ -24,13 +24,33 @@
     <button @click="reset_keys()">Reset Conf</button>
     <button @click="load()">Load from file</button> 
     <button @click="save()">Save to file</button> 
-    <div class="keyboards">
-        <object data="corne_left.svg" class="kb_side"
-            id="left_side"
+    <div class="keyboards" id="kb1">
+        <object data="img/ninja1_left.svg"
+            id="ninja1_left_side"
             type="image/svg+xml">
         </object> 
-        <object data="corne_right.svg" class="kb_side"
-            id="right_side"
+        <object data="img/ninja1_right.svg"
+            id="ninja1_right_side"
+            type="image/svg+xml">
+        </object>
+    </div>
+    <div class="keyboards" id="kb2">
+        <object data="img/corne_left.svg"
+            id="corne_left_side"
+            type="image/svg+xml">
+        </object> 
+        <object data="img/corne_right.svg"
+            id="corne_right_side"
+            type="image/svg+xml">
+        </object>
+    </div>
+    <div class="keyboards" id="kb3">
+        <object data="img/ninja2_left.svg"
+            id="ninja2_left_side"
+            type="image/svg+xml">
+        </object> 
+        <object data="img/ninja2_right.svg"
+            id="ninja2_right_side"
             type="image/svg+xml">
         </object>
     </div>
@@ -82,6 +102,7 @@
                 layer:0,
                 layers:[],
                 last:false,
+                model:1,
                 left_side:null,
                 right_side:null,
                 current:{
@@ -111,24 +132,35 @@
                 this.hid.close()
             },
             async update(){
-                await Keyboard.request_kb_info(this.hid.ninja_kb_device)
-                this.layers=Keyboard.layers
+                await this.kb.request_kb_info(this.hid.ninja_kb_device)
+                this.layers=this.kb.layers
+                //console.log("model ",this.kb.MODEL)
+                this.model=this.kb.MODEL
                 await this.read_conf()
             },
             async read_conf(){
-                await Keyboard.read_keys(this.hid.ninja_kb_device)
+                await this.kb.read_keys(this.hid.ninja_kb_device)
                 this.change_layer(this.layer)
             },
             async write_conf(){
-                await Keyboard.write_keys(this.hid.ninja_kb_device)
+                await this.kb.write_keys(this.hid.ninja_kb_device)
             },
             write_conf(){
                 reset_keys(device);
             }
             ,
             change_layer(e){
-                this.set_keys_text(this.left_side)
-                this.set_keys_text(this.right_side)
+                console.log("model ",this.model)
+                console.log("sides ",this.sides)
+                for(let i=1;i<4;i++){
+                    if(i!=this.model){
+                        this.sides[i][2].style.display="none";
+                    }
+                }
+                this.sides[this.model][2].style.display="flex";
+                
+                this.set_keys_text(this.sides[this.model][0])
+                this.set_keys_text(this.sides[this.model][1])
                 //console.log(this.layer)
             },
             load(){
@@ -194,8 +226,12 @@
             },
             //svg
             set_keys_text(svg){
+                if(svg==null){
+                    console.log("no svg")
+                    return
+                }
                 const doc=svg.contentDocument
-                const side=(svg.id=="left_side"?0:1)
+                const side=(svg.id.includes("left_side")?0:1)
                 let g=doc.getElementById("svg9")
                 for(let i=0;i<this.kb.nROWS;i++){
                     for(let j=0;j<this.kb.nCOLS;j++){
@@ -276,9 +312,25 @@
         mounted() {
             this.canvas = document.createElement("canvas");
             this.canvas_context = this.canvas.getContext("2d");
-            this.left_side=document.getElementById("left_side")
-            this.right_side=document.getElementById("right_side")
-            this.sides=[this.left_side,this.right_side]
+            
+            this.sides=[
+                [null,null],//empty model
+                [
+                    document.getElementById("ninja1_left_side"),
+                    document.getElementById("ninja1_right_side"),
+                    document.getElementById("kb1")
+                ],                
+                [
+                    document.getElementById("corne_left_side"),
+                    document.getElementById("corne_right_side"),
+                    document.getElementById("kb2")
+                ],
+                [
+                    document.getElementById("ninja2_left_side"),
+                    document.getElementById("ninja2_right_side"),
+                    document.getElementById("kb3")
+                ],
+            ]
             this.dialog=document.getElementById("key_dialog")
             window.addEventListener("keydown",(e)=>{
                 if (!e.repeat){
