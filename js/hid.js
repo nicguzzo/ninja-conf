@@ -60,8 +60,8 @@ const Hid={
         this.ninja_kb_device=null
         if(device==null)
             return false
-        
-        if(device.productName.includes("nicguzzo Ninja")){
+        console.log(device.productName)
+        if(device.productName.includes("Ninja")){
             this.ninja_kb_device=device
             await this.ninja_kb_device.open()
             await this.add_report_listener()
