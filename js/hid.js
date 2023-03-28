@@ -40,7 +40,7 @@ const Hid={
             return false
 
         for(i in devices){
-            if(devices[i].productName.includes("nicguzzo Ninja")){
+            if(devices[i].productName.includes("Ninja")){
                 device=devices[i]
                 break;
             }
