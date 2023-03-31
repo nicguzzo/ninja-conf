@@ -56,6 +56,7 @@ const Keyboard={
         }
     },
     async write_keys(device){
+      console.log("writing")
         for(let s=0;s<this.nSIDES;s++){                        
             for(let l=0;l<this.nLAYERS;l++){
                 let data=this.dump_keys(s,l)
