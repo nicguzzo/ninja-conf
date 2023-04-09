@@ -88,13 +88,13 @@ function App() {
       await device.open();
       device.addEventListener("inputreport", reportListener);
     }
-    await setDevice(device)
+    setDevice(device)
   }
   const close = async () => {
     if (device) {
       device.removeEventListener("inputreport", reportListener);
       device.close()
-      await setDevice(null)
+      setDevice(null)
     }
     const devices = await navigator.hid.getDevices()
     for (const d in devices) {
