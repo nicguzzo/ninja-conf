@@ -1,12 +1,16 @@
-import React, { useEffect } from 'react';
-import { useState } from "react";
+import { useEffect,useState ,createRef,RefObject } from 'react';
+
 import './App.css';
 
 import { promise } from './ninja/utils'
-
-import NinjaKeyboard from './components/NinjaKeyboard'
+import { getKeyCode } from './ninja/keys'
+//import NinjaKeyboard from './components/NinjaKeyboard'
 
 import { filters, Model, Ninja, Side, Layer, Keys, Key } from './ninja/ninja'
+import NinjaKeyboard from './components/NinjaKeyboard';
+
+const canvas = document.createElement("canvas");
+const canvas_context = canvas.getContext("2d");
 
 function App() {
   const [device, setDevice] = useState<HIDDevice | null>(null);
@@ -17,12 +21,28 @@ function App() {
     rows: 0,
     cols: 0,
   });
-
+  const [layer, setLayer] = useState<number>(0);
+  const [keysL, setKeysL] = useState<Layer|null>(null);
+  const [keysR, setKeysR] = useState<Layer|null>(null);
   const [report, setReport] = useState<number[]>([]);
+  const [keyDialog, setKeyDialog] = useState<{show:boolean,x:number,y:number}>({show:false,x:0,y:0});
 
   useEffect(() => {
     request_kb_info()
   }, [device])
+
+  useEffect(() => {
+    
+    /*const svg_bb = svg.getBoundingClientRect();
+            const doc = svg.contentDocument;
+            let key_e = doc.getElementById(`r${i}c${j}`);
+            const key_bb = key_e.getBoundingClientRect();
+            const dialog_bb = this.dialog.getBoundingClientRect();
+            const w = dialog_bb.width - key_bb.width;
+            this.dialog.style.left = svg_bb.x + key_bb.x - w / 2 + "px";
+            this.dialog.style.top = key_bb.y + key_bb.height + svg_bb.y + "px";
+            this.dialog.focus();*/
+  }, [keyDialog])
 
   //process reports
   useEffect(() => {
@@ -57,16 +77,25 @@ function App() {
           console.log("report keys side:", side_i, " layer: ", layer_i)
           let key: Key;
           if (ninja.keys) {
+            ninja.keys.sides[side_i].layers[layer_i].keys=[]
             for (let i = 0; i < ninja.rows; i++) {
+              let col=[]
               for (let j = 0; j < ninja.cols; j++) {
                 const ktype = report[k]
                 const code = report[k + 1]
-                ninja.keys.sides[side_i].layers[layer_i].keys.push({ ktype, code })
+                col.push({ ktype, code })
                 k += 2
               }
+              ninja.keys.sides[side_i].layers[layer_i].keys.push(col)
             }
-            console.log("keys ", ninja.keys);
+            //console.log("keys ", ninja.keys);
             ninja.keys.sides[side_i].layers[layer_i].promise.resolve()
+            if(side_i==0 && layer==layer_i){
+              setKeysL(ninja.keys.sides[side_i].layers[layer_i])
+            }
+            if(side_i==1 && layer==layer_i){
+              setKeysR(ninja.keys.sides[side_i].layers[layer_i])
+            }
           } else {
             console.log("no ninja info")
           }
@@ -108,7 +137,7 @@ function App() {
       return;
     for (let s = 0; s < ninja.sides; s++) {
       for (let l = 0; l < ninja.layers; l++) {
-        console.log(`request side: ${s} layer: ${l}`)
+        //console.log(`request side: ${s} layer: ${l}`)
         const data = [2, s, l];//2 == request keys ,side, layer
         device.sendReport(0, new Uint8Array(data));
 
@@ -130,9 +159,6 @@ function App() {
   const save = () => {
 
   }
-  const getNinja = () => {
-    return ninja
-  }
 
   const request_kb_info = () => {
     console.log("request_kb_info ", device)
@@ -151,7 +177,7 @@ function App() {
     }
     setReport(bytes)
   }
-
+  
   return (
     <div className="flex column jc-space-evenly flex-wrap">
       <div className="flex jc-center">
@@ -163,7 +189,47 @@ function App() {
         <button onClick={load}>Load from file</button>
         <button onClick={save}>Save to file</button>
       </div>
-      <NinjaKeyboard model={ninja.model} />
+      {ninja.keys && ninja.model != Model.none &&
+        
+        <div>
+          <div className="flex jc-space-evenly flex-wrap" id="kb">
+            <NinjaKeyboard  svg={Model[ninja.model]+"_left.svg"}  
+               rows={ninja.rows} cols={ninja.cols} keys={keysL} 
+               onKeyClicked={(a: any)=>{
+                console.log("clicked left ",a)
+                const l=a.l;
+                const t=a.t;
+                setKeyDialog({show:true,x:l,y:t})
+               }}
+            />
+            <NinjaKeyboard  svg={Model[ninja.model]+"_right.svg"} 
+               rows={ninja.rows} cols={ninja.cols} keys={keysR} 
+               onKeyClicked={(a: any)=>{
+                console.log("clicked right ",a)
+                const l=a.l;
+                const t=a.t;
+                setKeyDialog({show:true,x:l,y:t})
+               }}
+            />
+            
+          </div>
+          {keyDialog &&
+            <div className="keyDialog" id="key_dialog">
+              <div className="flex column">
+                <b className="flex key justifyCenter"></b>
+                <select className="flex justifyCenter">
+                  <option></option>
+                </select>
+                <b className="flex key justifyCenter"></b>
+                <select className="flex justifyCenter">
+                </select>
+                <button >Set</button>
+                <button >Cancel</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
     </div>
   );
 }

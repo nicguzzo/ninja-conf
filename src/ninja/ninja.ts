@@ -13,7 +13,7 @@ export interface Key {
 }
 
 export interface Layer {
-  keys: Key[],
+  keys: Key[][],
   promise: any //outside resolvable promise
 }
 

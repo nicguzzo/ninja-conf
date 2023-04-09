@@ -22,7 +22,6 @@ body{
 }
 
 .keyDialog{
-    display: none;
     position:fixed;
     width:150px;
     height: 200px;
