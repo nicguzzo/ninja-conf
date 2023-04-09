@@ -1,5 +1,5 @@
 //helper to resolve promises from the outside
-function promise() { 
+export function promise() { 
 	var res, rej;
 	var promise = new Promise((resolve, reject) => {
 		res = resolve;
@@ -9,3 +9,4 @@ function promise() {
 	promise.reject = rej;
 	return promise;
 }
+
