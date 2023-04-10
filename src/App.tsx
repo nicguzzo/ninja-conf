@@ -1,9 +1,8 @@
-import { useEffect,useState ,createRef,RefObject } from 'react';
+import { useEffect,useState } from 'react';
 
 import './App.css';
 
 import { promise } from './ninja/utils'
-import { getKeyCode } from './ninja/keys'
 
 import { filters, Model, Ninja, Side, Layer, Keys, Key } from './ninja/ninja'
 import {NinjaKeyboard,KeyClicked} from './components/NinjaKeyboard';
@@ -11,6 +10,7 @@ import {KeyDialog,DialogPos} from './components/KeyDialog';
 
 const canvas = document.createElement("canvas");
 const canvas_context = canvas.getContext("2d");
+
 
 function App() {
   const [device, setDevice] = useState<HIDDevice | null>(null);
@@ -32,7 +32,6 @@ function App() {
   }, [device])
 
   useEffect(() => {
-
   }, [keyDialog])
 
   //process reports
@@ -101,7 +100,8 @@ function App() {
 
   const open = async () => {
     console.log("open")
-    const [device] = await navigator.hid.requestDevice({ filters });//this MUST be called from button or user interaction
+    //this MUST be called from button or user interaction
+    const [device] = await navigator.hid.requestDevice({ filters });
 
     //console.log("device ",device)
     if (!device.opened) {
@@ -168,7 +168,7 @@ function App() {
     }
     setReport(bytes)
   }
-  
+
   return (
     <div className="flex column jc-space-evenly flex-wrap">
       <div className="flex jc-center">
@@ -181,7 +181,7 @@ function App() {
         <button onClick={save}>Save to file</button>
       </div>
       {ninja.keys && ninja.model != Model.none &&
-        
+
         <div>
           <div className="flex jc-space-evenly flex-wrap" id="kb">
             <NinjaKeyboard  svg={Model[ninja.model]+"_left.svg"}  
@@ -196,9 +196,8 @@ function App() {
                onKeyClicked={(a: KeyClicked)=>{
                 const {x,y,key}=a;
                 setKeyDialog({show:true,x,y,key})
-               }}
+              }}
             />
-            
           </div>
           <KeyDialog pos={keyDialog}/>
         </div>

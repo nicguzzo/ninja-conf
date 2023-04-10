@@ -1,7 +1,7 @@
 
-import { Model, Ninja,Layer,Key } from '../ninja/ninja'
+import { Layer,Key } from '../ninja/ninja'
 import { getKeyCode } from '../ninja/keys'
-import { useEffect, useState,createRef,RefObject } from 'react';
+import { useEffect, createRef, RefObject } from 'react';
 
 const canvas = document.createElement("canvas");
 const canvas_context = canvas.getContext("2d");
