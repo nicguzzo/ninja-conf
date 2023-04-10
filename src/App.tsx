@@ -1,9 +1,8 @@
-import { useEffect,useState ,createRef,RefObject } from 'react';
+import { useEffect,useState } from 'react';
 
 import './App.css';
 
 import { promise } from './ninja/utils'
-import { getKeyCode } from './ninja/keys'
 //import NinjaKeyboard from './components/NinjaKeyboard'
 
 import { filters, Model, Ninja, Side, Layer, Keys, Key } from './ninja/ninja'
@@ -11,6 +10,12 @@ import NinjaKeyboard from './components/NinjaKeyboard';
 
 const canvas = document.createElement("canvas");
 const canvas_context = canvas.getContext("2d");
+
+interface KeyDialog {
+  show: boolean
+  x: number
+  y: number
+}
 
 function App() {
   const [device, setDevice] = useState<HIDDevice | null>(null);
@@ -25,14 +30,16 @@ function App() {
   const [keysL, setKeysL] = useState<Layer|null>(null);
   const [keysR, setKeysR] = useState<Layer|null>(null);
   const [report, setReport] = useState<number[]>([]);
-  const [keyDialog, setKeyDialog] = useState<{show:boolean,x:number,y:number}>({show:false,x:0,y:0});
+  const [keyDialog, setKeyDialog] = useState<KeyDialog>({
+    show: false, x: 0, y: 0
+  });
 
   useEffect(() => {
     request_kb_info()
   }, [device])
 
   useEffect(() => {
-    
+
     /*const svg_bb = svg.getBoundingClientRect();
             const doc = svg.contentDocument;
             let key_e = doc.getElementById(`r${i}c${j}`);
@@ -110,7 +117,8 @@ function App() {
 
   const open = async () => {
     console.log("open")
-    const [device] = await navigator.hid.requestDevice({ filters });//this MUST be called from button or user interaction
+    //this MUST be called from button or user interaction
+    const [device] = await navigator.hid.requestDevice({ filters });
 
     //console.log("device ",device)
     if (!device.opened) {
@@ -177,7 +185,7 @@ function App() {
     }
     setReport(bytes)
   }
-  
+
   return (
     <div className="flex column jc-space-evenly flex-wrap">
       <div className="flex jc-center">
@@ -190,11 +198,11 @@ function App() {
         <button onClick={save}>Save to file</button>
       </div>
       {ninja.keys && ninja.model != Model.none &&
-        
+
         <div>
           <div className="flex jc-space-evenly flex-wrap" id="kb">
-            <NinjaKeyboard  svg={Model[ninja.model]+"_left.svg"}  
-               rows={ninja.rows} cols={ninja.cols} keys={keysL} 
+            <NinjaKeyboard  svg={Model[ninja.model]+"_left.svg"}
+               rows={ninja.rows} cols={ninja.cols} keys={keysL}
                onKeyClicked={(a: any)=>{
                 console.log("clicked left ",a)
                 const l=a.l;
@@ -202,8 +210,8 @@ function App() {
                 setKeyDialog({show:true,x:l,y:t})
                }}
             />
-            <NinjaKeyboard  svg={Model[ninja.model]+"_right.svg"} 
-               rows={ninja.rows} cols={ninja.cols} keys={keysR} 
+            <NinjaKeyboard  svg={Model[ninja.model]+"_right.svg"}
+               rows={ninja.rows} cols={ninja.cols} keys={keysR}
                onKeyClicked={(a: any)=>{
                 console.log("clicked right ",a)
                 const l=a.l;
@@ -211,7 +219,7 @@ function App() {
                 setKeyDialog({show:true,x:l,y:t})
                }}
             />
-            
+
           </div>
           {keyDialog &&
             <div className="keyDialog" id="key_dialog">

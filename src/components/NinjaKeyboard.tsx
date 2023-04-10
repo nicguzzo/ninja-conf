@@ -1,7 +1,7 @@
 
-import { Model, Ninja,Layer } from '../ninja/ninja'
+import { Layer } from '../ninja/ninja'
 import { getKeyCode } from '../ninja/keys'
-import { useEffect, useState,createRef,RefObject } from 'react';
+import { useEffect, createRef, RefObject } from 'react';
 
 const canvas = document.createElement("canvas");
 const canvas_context = canvas.getContext("2d");
@@ -125,7 +125,7 @@ const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,keys:Layer|nu
     const w = 100
     const l = svg_bb.x + key_bb.x - w / 2 + "px";
     const t = key_bb.y + key_bb.height + svg_bb.y + "px";
-    return {l,t}
+    return {l, t}
   }
 
   if (svg!="") {

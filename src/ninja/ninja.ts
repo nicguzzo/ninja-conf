@@ -1,5 +1,3 @@
-import { promise } from './utils'
-
 export enum Model {
   none,
   ninja1,
