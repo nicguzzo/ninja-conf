@@ -6,7 +6,7 @@ import { promise } from './ninja/utils'
 import { getKeyCode } from './ninja/keys'
 
 import { filters, Model, Ninja, Side, Layer, Keys, Key } from './ninja/ninja'
-import NinjaKeyboard from './components/NinjaKeyboard';
+import {NinjaKeyboard,KeyClicked} from './components/NinjaKeyboard';
 import {KeyDialog,DialogPos} from './components/KeyDialog';
 
 const canvas = document.createElement("canvas");
@@ -25,7 +25,7 @@ function App() {
   const [keysL, setKeysL] = useState<Layer|null>(null);
   const [keysR, setKeysR] = useState<Layer|null>(null);
   const [report, setReport] = useState<number[]>([]);
-  const [keyDialog, setKeyDialog] = useState<DialogPos>({show:false,x:0,y:0});
+  const [keyDialog, setKeyDialog] = useState<DialogPos>({show:false,x:0,y:0,key:{ktype:0,code:0}});
 
   useEffect(() => {
     request_kb_info()
@@ -186,18 +186,16 @@ function App() {
           <div className="flex jc-space-evenly flex-wrap" id="kb">
             <NinjaKeyboard  svg={Model[ninja.model]+"_left.svg"}  
                rows={ninja.rows} cols={ninja.cols} keys={keysL} 
-               onKeyClicked={(a: any)=>{
-                console.log("clicked left ",a)
-                const {x,y}=a.coords
-                setKeyDialog({show:true,x,y})
+               onKeyClicked={(a: KeyClicked)=>{
+                const {x,y,key}=a;
+                setKeyDialog({show:true,x,y,key})
                }}
             />
             <NinjaKeyboard  svg={Model[ninja.model]+"_right.svg"} 
                rows={ninja.rows} cols={ninja.cols} keys={keysR} 
-               onKeyClicked={(a: any)=>{
-                console.log("clicked right ",a)
-                const {x,y}=a.coords
-                setKeyDialog({show:true,x,y})
+               onKeyClicked={(a: KeyClicked)=>{
+                const {x,y,key}=a;
+                setKeyDialog({show:true,x,y,key})
                }}
             />
             

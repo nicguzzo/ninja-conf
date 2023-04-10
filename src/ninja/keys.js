@@ -5,7 +5,7 @@ export const getKeyCode=(c)=>{
   return key_codes[c];
 }
 
-const key_codes={
+export const key_codes={
 0x00:{symbol:"NoEventIndicated",name:"",},
 0x01:{symbol:"ErrorRollOver",name:"",},
 0x02:{symbol:"POSTFail",name:"",},
@@ -179,5 +179,11 @@ const key_codes={
 0xE5:{symbol:"⇧",name:"ShiftRight",},
 0xE6:{symbol:"AltGr",name:"AltRight",},
 0xE7:{symbol:"RGUI",name:"MetaRight",},
-0x100:{symbol:"Layer",name:""},
+
+0x101:{symbol:"tmp Layer",name:""},
+0x102:{symbol:"prev Layer",name:""},
+0x103:{symbol:"next Layer",name:""},
+0x104:{symbol:"first Layer",name:""},
+0x105:{symbol:"last Layer",name:""},
+0x106:{symbol:"set Layer",name:""}
 }

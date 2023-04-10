@@ -1,12 +1,23 @@
 
-import { Model, Ninja,Layer } from '../ninja/ninja'
+import { Model, Ninja,Layer,Key } from '../ninja/ninja'
 import { getKeyCode } from '../ninja/keys'
 import { useEffect, useState,createRef,RefObject } from 'react';
 
 const canvas = document.createElement("canvas");
 const canvas_context = canvas.getContext("2d");
 
-const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,keys:Layer|null,onKeyClicked:Function }) => {
+export interface KeyClicked{
+  side: number;
+  row: number;
+  col: number;
+  x: number;
+  y: number;
+  key: Key;
+}
+
+type KeyClickedCallback = (e:KeyClicked) => any;
+
+export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,keys:Layer|null,onKeyClicked:KeyClickedCallback }) => {
   const { svg,rows,cols,keys } = props;
 
   const svg_ref:RefObject<HTMLObjectElement>  = createRef();
@@ -44,7 +55,6 @@ const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,keys:Layer|nu
         let key_rect_e = doc.getElementById(`r${i}c${j}`);
         if (key_rect_e != null) {
           let key = keys.keys[i][j]
-          //let key = keys.sides[side].layers[layer].keys[i][j];
           let t = "";
           if (key.ktype == 0) {
             t = getKeyCode(key.code).symbol;
@@ -54,8 +64,6 @@ const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,keys:Layer|nu
           if (t != null) {
             const l = displayTextWidth(t, font, font_size) / 2;
             let tid = `key_text_${side}_r${i}c${j}`;
-            //let _txt_e = doc.getElementById(tid);
-            //let key_txt_e:SVGTextElement = _txt_e;
             let key_txt_e:SVGTextElement|null = null;
             if (key_txt_e == null) {
               key_txt_e = document.createElementNS(svgNS, "text");
@@ -64,16 +72,15 @@ const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,keys:Layer|nu
               key_txt_e.setAttributeNS(null, "text-align", "center");
 
               key_txt_e.addEventListener("click", (event) => {
-                const coords=getCoords(svg,key_rect_e)
-                props.onKeyClicked({side, i, j,coords})
-                //this.set_key_info(svg, side, i, j);
+                event.stopPropagation()
+                const {x,y}=getCoords(svg,key_rect_e)
+                props.onKeyClicked({side, row:i, col:j,x,y,key})
               });
-              //key_rect_e = key_rect_e;
               key_rect_e.setAttribute("cursor", "pointer");
               key_rect_e.addEventListener("click", (event) => {
-                const coords=getCoords(svg,key_rect_e,)
-                props.onKeyClicked({side, i, j,coords})
-                //this.set_key_info(svg, side, i, j, event);
+                event.stopPropagation()
+                const {x,y}=getCoords(svg,key_rect_e)
+                props.onKeyClicked({side, row:i, col:j,x,y,key})
               });
               g.appendChild(key_txt_e);
             }
