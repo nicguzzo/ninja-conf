@@ -5,31 +5,41 @@ export enum Model {
   ninja2
 }
 
-export interface Key {
-  ktype: number;
-  code: number;
+export interface IKeyInfo{
+  side: number;
+  x:number;
+  y:number;
+  row: number;
+  col: number;
+  key:IKey
 }
 
-export interface Layer {
-  keys: Key[][],
+export interface IKey {
+  keyType: number;
+  keyCode: number;
+  keyName: string;
+}
+
+export interface ILayer {
+  keys: IKey[][],
   promise: any //outside resolvable promise
 }
 
-export interface Side {
-  layers: Layer[]
+export interface ISide {
+  layers: ILayer[]
 }
 
-export interface Keys {
-  sides: Side[]
+export interface IKeys {
+  sides: ISide[]
 }
 
-export interface Ninja {
+export interface INinja {
   sides: number;
   layers: number;
   rows: number;
   cols: number;
   model: Model;
-  keys?: Keys;
+  keys?: IKeys;
 }
 
 export const filters = [
@@ -52,3 +62,7 @@ export const filters = [
     usage: 0x05
   },
 ]
+
+export function getSvgElementById(doc:Document,tid:string){
+  return <SVGTextElement|null> doc.getElementById(tid);
+}

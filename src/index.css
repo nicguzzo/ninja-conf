@@ -23,8 +23,8 @@ body{
 
 .keyDialog{
     position:fixed;
-    width:150px;
-    height: 200px;
+    width:250px;
+    height: 300px;
     background-color: #202b38;
     border:2px solid rgb(12,21,28);
     border-radius: 6px;
@@ -32,6 +32,9 @@ body{
     left:0;
     top:0;
     transition: left .5s cubic-bezier(.42,-0.3,.78,1.25),top .5s cubic-bezier(.42,-0.3,.78,1.25);
+}
+.param{
+  width: 50px;
 }
 .key{
     font-family: 'Courier New', Courier, monospace;
