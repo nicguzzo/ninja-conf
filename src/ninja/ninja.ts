@@ -8,8 +8,8 @@ export enum Model {
 }
 
 export interface Key {
-  ktype: number,
-  code: number
+  ktype: number;
+  code: number;
 }
 
 export interface Layer {
@@ -26,12 +26,12 @@ export interface Keys {
 }
 
 export interface Ninja {
-  sides: number,
-  layers: number,
-  rows: number,
-  cols: number,
-  model: Model
-  keys?: Keys
+  sides: number;
+  layers: number;
+  rows: number;
+  cols: number;
+  model: Model;
+  keys?: Keys;
 }
 
 export const filters = [
