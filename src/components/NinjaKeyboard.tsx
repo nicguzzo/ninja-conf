@@ -11,15 +11,10 @@ const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,keys:Layer|nu
 
   const svg_ref:RefObject<HTMLObjectElement>  = createRef();
 
-
-  //const [keys,setKeys]=useState(props.ninja.keys)
-
   const svgNS = "http://www.w3.org/2000/svg";
   const font = "Courier";
   const font_size = "18";
-  //const layer=0
-
-  //console.log("NinjaKeyboard ninja ",props.ninja)
+  
 
   useEffect(()=>{
     console.log("keys changed ",keys);
@@ -116,16 +111,13 @@ const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,keys:Layer|nu
 
   const getCoords=(svg:HTMLObjectElement,rect_e:HTMLElement|null)=>{
     if(!rect_e){
-      return {l:0,t:0}
+      return {x:0,y:0}
     }
     const svg_bb = svg.getBoundingClientRect();
     const key_bb = rect_e.getBoundingClientRect();
-    //const dialog_bb = this.dialog.getBoundingClientRect();
-    //const w = dialog_bb.width - key_bb.width;
-    const w = 100
-    const l = svg_bb.x + key_bb.x - w / 2 + "px";
-    const t = key_bb.y + key_bb.height + svg_bb.y + "px";
-    return {l, t}
+    const x = svg_bb.x + key_bb.x;
+    const y = key_bb.y + key_bb.height + svg_bb.y;
+    return {x,y}
   }
 
   if (svg!="") {

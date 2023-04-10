@@ -3,19 +3,15 @@ import { useEffect,useState } from 'react';
 import './App.css';
 
 import { promise } from './ninja/utils'
-//import NinjaKeyboard from './components/NinjaKeyboard'
+import { getKeyCode } from './ninja/keys'
 
 import { filters, Model, Ninja, Side, Layer, Keys, Key } from './ninja/ninja'
 import NinjaKeyboard from './components/NinjaKeyboard';
+import {KeyDialog,DialogPos} from './components/KeyDialog';
 
 const canvas = document.createElement("canvas");
 const canvas_context = canvas.getContext("2d");
 
-interface KeyDialog {
-  show: boolean
-  x: number
-  y: number
-}
 
 function App() {
   const [device, setDevice] = useState<HIDDevice | null>(null);
@@ -30,7 +26,7 @@ function App() {
   const [keysL, setKeysL] = useState<Layer|null>(null);
   const [keysR, setKeysR] = useState<Layer|null>(null);
   const [report, setReport] = useState<number[]>([]);
-  const [keyDialog, setKeyDialog] = useState<KeyDialog>({
+  const [keyDialog, setKeyDialog] = useState<DialogPos>({
     show: false, x: 0, y: 0
   });
 
@@ -39,16 +35,6 @@ function App() {
   }, [device])
 
   useEffect(() => {
-
-    /*const svg_bb = svg.getBoundingClientRect();
-            const doc = svg.contentDocument;
-            let key_e = doc.getElementById(`r${i}c${j}`);
-            const key_bb = key_e.getBoundingClientRect();
-            const dialog_bb = this.dialog.getBoundingClientRect();
-            const w = dialog_bb.width - key_bb.width;
-            this.dialog.style.left = svg_bb.x + key_bb.x - w / 2 + "px";
-            this.dialog.style.top = key_bb.y + key_bb.height + svg_bb.y + "px";
-            this.dialog.focus();*/
   }, [keyDialog])
 
   //process reports
@@ -205,37 +191,21 @@ function App() {
                rows={ninja.rows} cols={ninja.cols} keys={keysL}
                onKeyClicked={(a: any)=>{
                 console.log("clicked left ",a)
-                const l=a.l;
-                const t=a.t;
-                setKeyDialog({show:true,x:l,y:t})
+                const {x,y}=a.coords
+                setKeyDialog({show:true,x,y})
                }}
             />
             <NinjaKeyboard  svg={Model[ninja.model]+"_right.svg"}
                rows={ninja.rows} cols={ninja.cols} keys={keysR}
                onKeyClicked={(a: any)=>{
                 console.log("clicked right ",a)
-                const l=a.l;
-                const t=a.t;
-                setKeyDialog({show:true,x:l,y:t})
+                const {x,y}=a.coords
+                setKeyDialog({show:true,x,y})
                }}
             />
 
           </div>
-          {keyDialog &&
-            <div className="keyDialog" id="key_dialog">
-              <div className="flex column">
-                <b className="flex key justifyCenter"></b>
-                <select className="flex justifyCenter">
-                  <option></option>
-                </select>
-                <b className="flex key justifyCenter"></b>
-                <select className="flex justifyCenter">
-                </select>
-                <button >Set</button>
-                <button >Cancel</button>
-              </div>
-            </div>
-          }
+          <KeyDialog pos={keyDialog}/>
         </div>
       }
     </div>
