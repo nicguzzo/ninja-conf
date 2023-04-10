@@ -1,16 +1,15 @@
 import { useEffect,useState } from 'react';
-
 import './App.css';
-
 import { promise } from './ninja/utils'
-
 import { filters, Model, INinja, ISide, ILayer, IKeys, IKey,IKeyInfo } from './ninja/ninja'
-import {NinjaKeyboard} from './components/NinjaKeyboard';
-import {KeyDialog} from './components/KeyDialog';
+import { NinjaKeyboard } from './components/NinjaKeyboard';
+import { KeyDialog } from './components/KeyDialog';
 import { getKeyCode } from './ninja/keys';
 
 function App() {
   const [device, setDevice] = useState<HIDDevice | null>(null);
+  const [runOnce, setRunOnce] = useState<boolean>(true)
+  const [keys, setKeys] = useState<IKeys|null>(null)
   const [ninja, setNinja] = useState<INinja>({
     model: Model.none,
     sides: 0,
@@ -37,7 +36,39 @@ function App() {
   }, [device])
 
   useEffect(() => {
-  }, [keyDialog])
+    console.log("useEffect keys ",keys)
+    if(keys && keys.sides.length>0 && runOnce){
+      read_conf()
+      setRunOnce(false)
+    }
+  }, [keys])
+
+  useEffect(() => {
+    console.log("useEffect ninja")
+    let keys: IKeys = { sides: [] };
+    for (let s = 0; s < ninja.sides; s++) {
+      let side: ISide = { layers: [] };
+      for (let l = 0; l < ninja.layers; l++) {
+        const layer: ILayer = { keys: [], promise: null }
+        side.layers.push(layer)
+      }
+      keys.sides.push(side)
+    }
+    setKeys({...keys})
+    
+  }, [ninja])
+
+  
+
+  useEffect(()=>{    
+    console.log("refreshing keys ")
+    if(keys){
+      refresh_keys(keys.sides[0],0)
+      refresh_keys(keys.sides[1],1)
+    }else{
+      console.log("no keys")
+    }
+  },[layer])
 
   //process reports
   useEffect(() => {
@@ -47,16 +78,8 @@ function App() {
         {
           console.log("report kb info ")
           const [_t, model, sides, layers, rows, cols] = report;
-          let keys: IKeys = { sides: [] };
-          for (let s = 0; s < sides; s++) {
-            let side: ISide = { layers: [] };
-            for (let l = 0; l < layers; l++) {
-              const layer: ILayer = { keys: [], promise: null }
-              side.layers.push(layer)
-            }
-            keys.sides.push(side)
-          }
-          setNinja({ model, sides, layers, rows, cols, keys })
+          
+          setNinja({ model, sides, layers, rows, cols })
           console.log("model", model);
           console.log("sides", sides);
           console.log("layers", layers);
@@ -71,8 +94,8 @@ function App() {
           let k = 4
           console.log("report keys side:", side_i, " layer: ", layer_i)
           let key: IKey;
-          if (ninja.keys) {
-            ninja.keys.sides[side_i].layers[layer_i].keys=[]
+          if (keys) {
+            keys.sides[side_i].layers[layer_i].keys=[]
             for (let i = 0; i < ninja.rows; i++) {
               let col:IKey[]=[]
               for (let j = 0; j < ninja.cols; j++) {
@@ -83,17 +106,17 @@ function App() {
                 col.push({ keyType, keyCode,keyName })
                 k += 2
               }
-              ninja.keys.sides[side_i].layers[layer_i].keys.push(col)
+              keys.sides[side_i].layers[layer_i].keys.push(col)
             }
-            //console.log("keys ", ninja.keys);
-            ninja.keys.sides[side_i].layers[layer_i].promise.resolve()
+            //console.log("keys ", keys);
+            keys.sides[side_i].layers[layer_i].promise.resolve()
             if(side_i==0 && layer==layer_i){
-              setKeysL(ninja.keys.sides[side_i].layers[layer_i])
+              setKeysL(keys.sides[side_i].layers[layer_i])
             }
             if(side_i==1 && layer==layer_i){
-              setKeysR(ninja.keys.sides[side_i].layers[layer_i])
+              setKeysR(keys.sides[side_i].layers[layer_i])
             }
-            setNinja({...ninja})
+            setKeys({...keys})
           } else {
             console.log("no ninja info")
           }
@@ -107,11 +130,8 @@ function App() {
   }, [report])
 
   const open = async () => {
-    console.log("open")
     //this MUST be called from button or user interaction
     const [device] = await navigator.hid.requestDevice({ filters });
-
-    //console.log("device ",device)
     if (!device.opened) {
       await device.open();
       device.addEventListener("inputreport", reportListener);
@@ -130,30 +150,32 @@ function App() {
     }
   }
   const read_conf = async () => {
-    if (!device)
+    if (!device){
+      console.log("no device")
       return;
-    if (!ninja.keys)
+    }
+    if (!keys){
+      console.log("no keys")
       return;
+    }
     for (let s = 0; s < ninja.sides; s++) {
       for (let l = 0; l < ninja.layers; l++) {
-        //console.log(`request side: ${s} layer: ${l}`)
         const data = [2, s, l];//2 == request keys ,side, layer
         device.sendReport(0, new Uint8Array(data));
-
         // we need to wait for the eventlistener to finish geting the last report
-        ninja.keys.sides[s].layers[l].promise = promise();
-        await ninja.keys.sides[s].layers[l].promise
+        keys.sides[s].layers[l].promise = promise();
+        await keys.sides[s].layers[l].promise
       }
     }
   }
   const dump_keys=(side:number,layer:number)=>{
-    if (!ninja.keys)
+    if (!keys)
       return null;
     let data = [1,0,side,layer];
     for(let i=0;i<ninja.rows;i++){                    
         for(let j=0;j<ninja.cols;j++){                        
-            data.push(ninja.keys.sides[side].layers[layer].keys[i][j].keyType)
-            data.push(ninja.keys.sides[side].layers[layer].keys[i][j].keyCode)                        
+            data.push(keys.sides[side].layers[layer].keys[i][j].keyType)
+            data.push(keys.sides[side].layers[layer].keys[i][j].keyCode)                        
         }
     }
     return data
@@ -161,7 +183,7 @@ function App() {
   const write_conf =async () => {
     if (!device)
       return;
-    if (!ninja.keys)
+    if (!keys)
       return;
     for(let s=0;s<ninja.sides;s++){                        
       for(let l=0;l<ninja.layers;l++){
@@ -198,7 +220,6 @@ function App() {
     a.href = window.URL.createObjectURL(bb);
     a.click();
   }
-
   const request_kb_info = () => {
     //console.log("request_kb_info ", device)
     if (!device){
@@ -207,8 +228,8 @@ function App() {
     }
     const data = [0];//0 == request kb info
     device.sendReport(0, new Uint8Array(data));
+    
   }
-
   //process al webhid reports responses
   const reportListener = (event: HIDInputReportEvent) => {
     const { data, device, reportId } = event;
@@ -218,36 +239,18 @@ function App() {
     }
     setReport(bytes)
   }
-
   const setKey=(ki:IKeyInfo)=>{
     console.log("setKey")
-    if(ninja.keys){
-      const {side,row,col,key}=ki      
-      let keys={...ninja.keys}
+    if(keys){
+      const {side,row,col,key}=ki
       keys.sides[side].layers[layer].keys[row][col]=key;
       console.log(keys.sides[side].layers[layer].keys[row][col])
-      setNinja({...ninja,keys})
+      setKeys({...keys})
       console.log("side ",side)
       refresh_keys(keys.sides[side],side)
+      setShowDialog(false)
     }
   }
-
-  useEffect(()=>{    
-    console.log("refreshing keys ")
-    if(ninja.keys){
-      refresh_keys(ninja.keys.sides[0],0)
-      refresh_keys(ninja.keys.sides[1],1)
-    }else{
-      console.log("no keys")
-    }
-  },[layer])
-  
-  /*useEffect(()=>{    
-    if(ninja.keys){
-      console.log("Keys ",ninja.keys.sides[0].layers[0].keys)
-    }
-  },[ninja])*/
-
   const refresh_keys=(side:ISide,side_i:number)=>{
     let l=side.layers[layer]
     if(side_i==0){
@@ -258,11 +261,10 @@ function App() {
       setKeysR({...l})
     }
   }
-
   const onLayer = (e: React.FormEvent<HTMLSelectElement>) => {
     setLayer(+e.currentTarget.value)
+    setShowDialog(false)
   }
-  
 
   return (
     <div className="flex column jc-space-evenly flex-wrap">
@@ -276,7 +278,7 @@ function App() {
         <button onClick={load}>Load from file</button>
         <button onClick={save}>Save to file</button>
       </div>
-      {ninja.keys && ninja.model != Model.none &&
+      {keys && ninja.model != Model.none &&
 
         <div>
           <div className="flex jc-center align-center"> Layer 

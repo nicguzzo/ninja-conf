@@ -25,12 +25,6 @@ export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,side:n
   const font = "Courier";
   const font_size = "18";
   const [keyClk,setKeyClk]=useState<IKeyEvt|null>(null)
-  /*const [keys,setKeys]=useState<ILayer|null>(props.keys)
-
-  useEffect(()=>{
-    console.log("props changed ",keys);
-    setKeys(props.keys)
-  },[props.keys])*/
 
   useEffect(()=>{
     console.log("keys changed ",keys);
@@ -66,8 +60,6 @@ export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,side:n
             const l = displayTextWidth(t, font, font_size) / 2;
             let tid = `key_text_${side}_r${row}c${col}`;
             
-            //let key_txt_e:SVGTextElement|null = null;
-            //let _txt_e = doc.getElementById(tid);
             let key_txt_e = getSvgElementById(doc,tid)
             
             if (key_txt_e == null) {
@@ -79,17 +71,13 @@ export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,side:n
               key_txt_e.addEventListener("click", (event) => {
                 event.stopPropagation()
                 const {x,y}=getCoords(svg,key_rect_e)
-                setKeyClk({side,row,col,x,y})
-                //keyClicked(side,i, j,x,y)
-                //props.onKeyClicked({side, row:i, col:j,x,y,key:keys.keys[i][j]})
+                setKeyClk({side,row,col,x,y})                
               });
               key_rect_e.setAttribute("cursor", "pointer");
               key_rect_e.addEventListener("click", (event) => {
                 event.stopPropagation()
                 const {x,y}=getCoords(svg,key_rect_e)
                 setKeyClk({side,row,col,x,y})
-                //props.onKeyClicked({side, row:i, col:j,x,y,key:keys.keys[i][j]})
-                //keyClicked(side,i, j,x,y)
               });
               g.appendChild(key_txt_e);
             }

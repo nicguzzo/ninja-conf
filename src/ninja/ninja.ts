@@ -38,8 +38,7 @@ export interface INinja {
   layers: number;
   rows: number;
   cols: number;
-  model: Model;
-  keys?: IKeys;
+  model: Model;  
 }
 
 export const filters = [
