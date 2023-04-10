@@ -6,6 +6,14 @@ import { useEffect, createRef, RefObject, useState } from 'react';
 const canvas = document.createElement("canvas");
 const canvas_context = canvas.getContext("2d");
 
+
+export interface IKeyEvt{
+  side: number;
+  row: number;
+  col: number;
+  x: number;
+  y: number;
+}
 type KeyClickedCallback = (e:IKeyInfo) => any;
 
 export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,side:number,keys:ILayer|null,onKeyClicked:KeyClickedCallback }) => {
@@ -16,6 +24,7 @@ export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,side:n
   const svgNS = "http://www.w3.org/2000/svg";
   const font = "Courier";
   const font_size = "18";
+  const [keyClk,setKeyClk]=useState<IKeyEvt|null>(null)
   /*const [keys,setKeys]=useState<ILayer|null>(props.keys)
 
   useEffect(()=>{
@@ -46,16 +55,16 @@ export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,side:n
       console.log("bad g svg9");
       return;
     }
-    for (let i = 0; i < rows; i++) {
-      for (let j = 0; j < cols; j++) {
-        let key_rect_e = doc.getElementById(`r${i}c${j}`);
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        let key_rect_e = doc.getElementById(`r${row}c${col}`);
         if (key_rect_e != null) {
-          let key = keys.keys[i][j]
+          let key = keys.keys[row][col]
           let t = getKeyCode(key.keyType,key.keyCode).symbol;
           
           if (t != null) {
             const l = displayTextWidth(t, font, font_size) / 2;
-            let tid = `key_text_${side}_r${i}c${j}`;
+            let tid = `key_text_${side}_r${row}c${col}`;
             
             //let key_txt_e:SVGTextElement|null = null;
             //let _txt_e = doc.getElementById(tid);
@@ -70,15 +79,17 @@ export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,side:n
               key_txt_e.addEventListener("click", (event) => {
                 event.stopPropagation()
                 const {x,y}=getCoords(svg,key_rect_e)
-                keyClicked(side,i, j,x,y)
+                setKeyClk({side,row,col,x,y})
+                //keyClicked(side,i, j,x,y)
                 //props.onKeyClicked({side, row:i, col:j,x,y,key:keys.keys[i][j]})
               });
               key_rect_e.setAttribute("cursor", "pointer");
               key_rect_e.addEventListener("click", (event) => {
                 event.stopPropagation()
-                const {x,y}=getCoords(svg,key_rect_e)                
+                const {x,y}=getCoords(svg,key_rect_e)
+                setKeyClk({side,row,col,x,y})
                 //props.onKeyClicked({side, row:i, col:j,x,y,key:keys.keys[i][j]})
-                keyClicked(side,i, j,x,y)
+                //keyClicked(side,i, j,x,y)
               });
               g.appendChild(key_txt_e);
             }
@@ -104,14 +115,15 @@ export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,side:n
     }
   },[keys])
 
-  const  keyClicked=(side:number,row:number,col:number,x:number,y:number)=>{
+  useEffect(()=>{
     console.log("keyClicked ",keys)
-    if(keys){
+    if(keyClk && keys){
+      const {side,row,col,x,y}=keyClk;
       props.onKeyClicked({side, row, col,x,y,key:keys.keys[row][col]})
     }else{
       console.log("no keys")
     }
-  }
+  },[keyClk])
   
   const displayTextWidth=(text:string, font:string, size:string)=>{
     if (canvas_context != null) {
