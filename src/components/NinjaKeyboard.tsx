@@ -97,6 +97,8 @@ export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,side:n
             key_txt_e.innerHTML = t
               .replace(/</, "&lt;")
               .replace(/>/, "&gt;");
+          }else{
+            console.log("bad keycode");
           }
         }
       }
