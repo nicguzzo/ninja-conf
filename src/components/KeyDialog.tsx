@@ -1,5 +1,5 @@
 import { useEffect, useState} from 'react';
-import { key_codes,layer_key_codes,getKeyCode } from '../ninja/keys'
+import { getKeyCode,key_codes,layer_key_codes } from '../ninja/keys'
 import { IKeyInfo } from '../ninja/ninja'
 
 type onSetCallback = (e:IKeyInfo) => any;
@@ -50,9 +50,20 @@ export const KeyDialog = (props:{keyinfo:IKeyInfo,show:boolean ,onClose:Function
   },[keyinfo.key.keyCode])
 
   useEffect(()=>{
+    if(key.keyType>=1){
+      const kc=getKeyCode(keyType,keyType)
+      if(kc && kc.params && kc.params>0)
+        setLayerParam(keyCode)
+    }
     setKeytype(key.keyType)
+    
   },[keyinfo.key.keyType])
-  
+
+  const kc=getKeyCode(keyType,keyCode)
+  const keyName=(kc?kc.name:"")
+  const kc2=getKeyCode(keyType,keyType)
+  //console.log("kc2")
+  const keyParam=(kc2?kc2.params:0)
   return (
     <div className="keyDialog" id="key_dialog" style={style}>
       <div className="flex column">
@@ -71,12 +82,11 @@ export const KeyDialog = (props:{keyinfo:IKeyInfo,show:boolean ,onClose:Function
           <select className="flex justifyCenter" value={(keyType>0?keyType:0)} onChange={onLayer} >
             {Object.entries(layer_key_codes).map((x,i)=><option key={i} value={x[0]}>{x[1].name}</option>)}
           </select>
-          {keyType >= 1 && getKeyCode(keyType,keyType).params>=1 && 
+          {keyType >= 1 && keyParam && keyParam>=1 && 
             <input type="number" className='param' value={layerParam} onChange={onParam}/>
           }
         </div>
         <button onClick={()=>{
-          const keyName=getKeyCode(keyType,keyCode).name
           props.onSet({...keyinfo,key:{keyType,keyCode,keyName}})
         }} >Set</button>
         <button onClick={()=>props.onClose()} >Cancel</button>

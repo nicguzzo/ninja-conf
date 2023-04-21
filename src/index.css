@@ -34,7 +34,7 @@ body{
     transition: left .5s cubic-bezier(.42,-0.3,.78,1.25),top .5s cubic-bezier(.42,-0.3,.78,1.25);
 }
 .param{
-  width: 50px;
+  width: 32px;
 }
 .key{
     font-family: 'Courier New', Courier, monospace;

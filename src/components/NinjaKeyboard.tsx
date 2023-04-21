@@ -54,8 +54,10 @@ export const NinjaKeyboard = (props: { svg:string,rows:number,cols:number,side:n
         let key_rect_e = doc.getElementById(`r${row}c${col}`);
         if (key_rect_e != null) {
           let key = keys.keys[row][col]
-          let t = getKeyCode(key.keyType,key.keyCode).symbol;
-          
+          let kc=getKeyCode(key.keyType,key.keyCode)
+          let t =(kc? kc.symbol:"" );
+          if(key.keyType==1)
+            console.log("t: ",t," kt:",key.keyType," kc:",key.keyCode)
           if (t != null) {
             const l = displayTextWidth(t, font, font_size) / 2;
             let tid = `key_text_${side}_r${row}c${col}`;

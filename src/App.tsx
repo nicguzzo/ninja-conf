@@ -102,7 +102,7 @@ function App() {
                 const keyType = report[k]
                 const keyCode = report[k + 1]
                 let kc=getKeyCode(keyType,keyCode)
-                const keyName = kc.symbol+kc.name
+                const keyName =(kc? kc.symbol+kc.name:"nc")
                 col.push({ keyType, keyCode,keyName })
                 k += 2
               }
@@ -148,6 +148,13 @@ function App() {
     for (const d in devices) {
       await devices[d].forget()
     }
+    setNinja({
+      model: Model.none,
+      sides: 0,
+      layers: 0,
+      rows: 0,
+      cols: 0,
+    })
   }
   const read_conf = async () => {
     if (!device){
@@ -222,7 +229,7 @@ function App() {
   }
   const request_kb_info = () => {
     //console.log("request_kb_info ", device)
-    if (!device){
+    if (!device){ 
       console.log("request_kb_info no device ")
       return;
     }
@@ -243,6 +250,7 @@ function App() {
     console.log("setKey")
     if(keys){
       const {side,row,col,key}=ki
+      //TODO: validate this
       keys.sides[side].layers[layer].keys[row][col]=key;
       console.log(keys.sides[side].layers[layer].keys[row][col])
       setKeys({...keys})
@@ -279,7 +287,6 @@ function App() {
         <button onClick={save}>Save to file</button>
       </div>
       {keys && ninja.model != Model.none &&
-
         <div>
           <div className="flex jc-center align-center"> Layer 
             <select value={layer} onChange={onLayer}>
@@ -308,6 +315,7 @@ function App() {
           />
         </div>
       }
+      <textarea></textarea>
     </div>
   );
 }

@@ -1,15 +1,17 @@
 export const keys_letters_numbers = {
   from: 0x4, to: 0xe7
 }
-export function getKeyCode(t,c) {
-  if(t==0)
-    return key_codes[c];
-  else
-    return layer_key_codes[c];
+
+interface IKCodeInfo{
+    symbol:string;
+    name:string;
+    params?:number;
+}
+interface IKCode{
+  [c:number] :IKCodeInfo
 }
 
-
-export const key_codes = {
+export const key_codes:IKCode = {
   0x00: { symbol: "", name: "", },
   0x01: { symbol: "ErrorRollOver", name: "", },
   0x02: { symbol: "POSTFail", name: "", },
@@ -184,7 +186,7 @@ export const key_codes = {
   0xE6: { symbol: "AltGr", name: "Right Alt", },
   0xE7: { symbol: "RGUI", name: "Right Meta", },
 }
-export const layer_key_codes = {
+export const layer_key_codes:IKCode = {
   0x00: { symbol: "",        name: "" , params: 0},
   0x01: { symbol: "LyTmp",   name: "Temp Layer" , params: 1},
   0x02: { symbol: "LyPrev",  name: "Prev Layer" , params: 0},
@@ -192,4 +194,11 @@ export const layer_key_codes = {
   0x04: { symbol: "LyFirst", name: "First Layer" , params: 0},
   0x05: { symbol: "LyLast",  name: "Last Layer" , params: 0},
   0x06: { symbol: "LySet",   name: "Set Layer" , params: 1}
+}
+
+export function getKeyCode(t:number,c:number):IKCodeInfo {
+  if(t==0)
+    return key_codes[c];
+  else
+    return layer_key_codes[t];
 }
